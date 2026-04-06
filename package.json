@@ -1,0 +1,20 @@
+{
+  "name": "wpremote-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server pre WP Remote (BlogVault) API v6 — kompletná správa WordPress stránok",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "TRANSPORT=http node server.mjs",
+    "start:stdio": "TRANSPORT=stdio node server.mjs",
+    "start:http": "TRANSPORT=http node server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "express": "^4.21.0",
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
