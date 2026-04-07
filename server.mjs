@@ -3193,24 +3193,38 @@ function createServer() {
       let fileBuffer;
       let fileName = "plugin.zip";
       if (file_url) {
-        const resp = await fetch(file_url);
+        // Google Drive: convert sharing link to direct download URL
+        let downloadUrl = file_url;
+        const gdMatch = file_url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+        if (gdMatch) {
+          downloadUrl = `https://drive.google.com/uc?export=download&id=${gdMatch[1]}`;
+        }
+        // Follow redirects (Google Drive, GitHub, etc.)
+        const resp = await fetch(downloadUrl, { redirect: "follow" });
         if (!resp.ok) throw new Error(`Failed to download file: HTTP ${resp.status}`);
         fileBuffer = Buffer.from(await resp.arrayBuffer());
-        fileName = file_url.split("/").pop() || "plugin.zip";
+        // Extract filename from Content-Disposition header or URL
+        const cd = resp.headers.get("content-disposition");
+        if (cd) {
+          const m = cd.match(/filename\*?=(?:UTF-8''|")([^";]+)/i);
+          if (m) fileName = decodeURIComponent(m[1].replace(/"/g, ""));
+        } else {
+          fileName = downloadUrl.split("/").pop().split("?")[0] || "plugin.zip";
+        }
       } else if (file_path) {
         fileBuffer = readFileSync(file_path);
         fileName = basename(file_path);
       } else {
         return err("Provide either file_url or file_path.");
       }
+      // BlogVault API requires empty-bracket notation for arrays
       const formData = new FormData();
       const blob = new Blob([fileBuffer], { type: "application/zip" });
-      formData.append("plugins[0][file]", blob, fileName);
+      formData.append("plugins[][file]", blob, fileName);
       if (sites) {
         const sitesArr = parseJsonParam(sites, "sites");
-        sitesArr.forEach((s, i) => {
-          formData.append(`sites[${i}][id]`, s.id);
-          if (s.options) Object.entries(s.options).forEach(([k,v]) => formData.append(`sites[${i}][options][${k}]`, String(v)));
+        sitesArr.forEach((s) => {
+          formData.append("sites[][id]", s.id);
         });
       }
       if (override_lock) formData.append("override_lock", "true");
