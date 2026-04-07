@@ -94,7 +94,8 @@ async function api(accountName, method, path, { query, body, timeoutMs = 60000, 
     }
 
     if (!res.ok) {
-      const msg = data.message || data.error || JSON.stringify(data).substring(0, 500);
+      const raw = data.message || data.error || data;
+      const msg = typeof raw === "string" ? raw : JSON.stringify(raw).substring(0, 500);
       throw new Error(`HTTP ${res.status}: ${msg}`);
     }
 
